@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ur" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="Personal Finance Tracker - Loans, Fees, Reminders"/>
+<title>Finance Tracker - مالی ریکارڈ</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#f1f5f9;min-height:100vh}
+  input,select,textarea{font-family:inherit}
+  button{cursor:pointer;font-family:inherit}
+
+  /* TOPBAR */
+  .topbar{background:#1e293b;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e3a5f;position:sticky;top:0;z-index:100}
+  .topbar-name{font-weight:700;font-size:15px}
+  .topbar-cnic{color:#475569;font-size:11px;margin-top:2px}
+  .btn-logout{background:#334155;border:none;color:#f87171;padding:7px 14px;border-radius:8px;font-size:13px}
+
+  /* BOTTOM NAV */
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#1e293b;display:flex;border-top:1px solid #1e3a5f;z-index:100}
+  .nav-btn{flex:1;padding:12px 4px 8px;border:none;background:transparent;color:#64748b;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .2s}
+  .nav-btn.active{color:#3b82f6}
+  .nav-btn svg{width:22px;height:22px}
+  .nav-icon{font-size:20px}
+
+  /* MAIN CONTENT */
+  .main{max-width:540px;margin:0 auto;padding:16px 14px 80px}
+
+  /* CARDS */
+  .card{background:#1e293b;border-radius:14px;padding:16px;margin-bottom:12px}
+  .card-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .summary-card{background:#1e293b;border-radius:14px;padding:16px}
+  .summary-label{color:#94a3b8;font-size:10px;letter-spacing:.5px;text-transform:uppercase}
+  .summary-value{font-size:22px;font-weight:700;margin-top:5px}
+
+  /* ALERT */
+  .alert{border-radius:12px;padding:14px;margin-bottom:12px;border:1px solid}
+  .alert-title{font-weight:700;margin-bottom:6px;font-size:14px}
+  .alert-item{font-size:13px;margin-top:3px}
+
+  /* RECORD CARD */
+  .record-card{background:#1e293b;border-radius:14px;padding:14px;margin-bottom:12px;border-left:4px solid}
+  .record-card.paid{opacity:.55}
+  .chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;margin:0 3px 3px 0}
+  .record-title{font-weight:700;font-size:15px;margin:6px 0 2px}
+  .record-note{color:#64748b;font-size:12px}
+  .record-date{color:#475569;font-size:12px;margin-top:4px}
+  .record-amount{font-weight:700;font-size:16px}
+  .record-status{font-size:11px;margin-top:2px}
+  .record-actions{display:flex;gap:8px;margin-top:11px}
+  .btn-paid{flex:1;padding:8px;border-radius:8px;border:1px solid;font-size:12px;font-weight:600}
+  .btn-icon{padding:8px 11px;border-radius:8px;border:none;font-size:15px}
+
+  /* FILTERS */
+  .filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px;scrollbar-width:none}
+  .filters::-webkit-scrollbar{display:none}
+  .filter-btn{padding:5px 13px;border-radius:20px;border:none;font-size:12px;white-space:nowrap;font-weight:500}
+
+  /* FORM */
+  .form-group{margin-bottom:14px}
+  .form-label{color:#94a3b8;font-size:12px;display:block;margin-bottom:5px}
+  .form-input{width:100%;padding:11px 13px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:14px}
+  .form-input:focus{outline:none;border-color:#3b82f6}
+  .form-select{width:100%;padding:11px 13px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:14px}
+  .btn-primary{width:100%;padding:13px;background:#3b82f6;color:#fff;border:none;border-radius:11px;font-size:15px;font-weight:700}
+  .btn-green{width:100%;padding:13px;background:#22c55e;color:#fff;border:none;border-radius:11px;font-size:15px;font-weight:700}
+  .btn-outline{width:100%;padding:11px;background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:11px;font-size:14px;margin-top:10px}
+
+  /* LOGIN */
+  .login-wrap{min-height:100vh;background:linear-gradient(135deg,#1e3a5f,#0f172a);display:flex;align-items:center;justify-content:center;padding:20px}
+  .login-box{background:#1e293b;border-radius:22px;padding:36px;width:100%;max-width:360px;box-shadow:0 24px 64px #0009}
+  .login-logo{font-size:56px;text-align:center}
+  .login-title{text-align:center;font-size:24px;font-weight:700;margin:10px 0 4px}
+  .login-sub{text-align:center;color:#64748b;font-size:13px;margin-bottom:28px}
+
+  /* TOGGLE */
+  .toggle-row{display:flex;align-items:center;gap:12px;padding:13px;background:#0f172a;border-radius:10px;border:1px solid #334155;margin-bottom:14px}
+  .toggle-label{flex:1}
+  .toggle-title{color:#22d3ee;font-size:14px}
+  .toggle-sub{color:#475569;font-size:11px;margin-top:2px}
+  .toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+  .toggle input{opacity:0;width:0;height:0}
+  .toggle-slider{position:absolute;inset:0;background:#334155;border-radius:24px;transition:.3s}
+  .toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s}
+  .toggle input:checked + .toggle-slider{background:#06b6d4}
+  .toggle input:checked + .toggle-slider:before{transform:translateX(20px)}
+
+  /* NOTIF BADGE */
+  .notif-badge{background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;display:inline-flex;align-items:center;justify-content:center;margin-left:4px;vertical-align:top}
+
+  /* CATEGORY BREAKDOWN */
+  .cat-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #1e3a5f}
+  .cat-row:last-child{border:none}
+
+  /* REMINDER INFO BOX */
+  .info-box{padding:14px;background:#0e172a;border:1px solid #0e4a5a;border-radius:14px;margin-bottom:18px}
+  .info-title{color:#22d3ee;font-weight:700;font-size:14px;margin-bottom:6px}
+  .info-text{color:#94a3b8;font-size:13px;line-height:1.6}
+
+  /* EMPTY STATE */
+  .empty{text-align:center;color:#475569;padding:50px 20px;font-size:15px;line-height:2}
+
+  /* SECTION TITLE */
+  .section-title{color:#94a3b8;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:10px 22px;border-radius:30px;font-size:14px;font-weight:600;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+  .toast.show{opacity:1}
+
+  @media(min-width:600px){
+    .main{padding:20px 20px 80px}
+  }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN SCREEN -->
+<div id="screen-login" class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">💰</div>
+    <div class="login-title">Finance Tracker</div>
+    <div class="login-sub">Loans · Fees · Reminders · Installments</div>
+    <div class="form-group">
+      <label class="form-label">Apna CNIC darj karein</label>
+      <input class="form-input" id="login-cnic" placeholder="35202-1234567-1" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <div id="login-error" style="color:#f87171;font-size:12px;margin-bottom:10px;display:none"></div>
+    <button class="btn-primary" onclick="doLogin()">Login →</button>
+    <button class="btn-outline" onclick="showScreen('register')">Naye User? Register Karein</button>
+    <div style="color:#475569;font-size:11px;text-align:center;margin-top:14px">Demo CNIC: 35202-1234567-1</div>
+  </div>
+</div>
+
+<!-- REGISTER SCREEN -->
+<div id="screen-register" class="login-wrap" style="display:none">
+  <div class="login-box">
+    <div style="font-size:44px;text-align:center">📝</div>
+    <div class="login-title" style="margin-bottom:20px">Account Banayein</div>
+    <div class="form-group">
+      <label class="form-label">Poora Naam</label>
+      <input class="form-input" id="reg-name" placeholder="Muhammad Ali"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">CNIC</label>
+      <input class="form-input" id="reg-cnic" placeholder="35202-0000000-0"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Phone (reminders ke liye)</label>
+      <input class="form-input" id="reg-phone" placeholder="0300-0000000" type="tel"/>
+    </div>
+    <div id="reg-error" style="color:#f87171;font-size:12px;margin-bottom:10px;display:none"></div>
+    <button class="btn-green" onclick="doRegister()">Account Banayein ✓</button>
+    <button class="btn-outline" onclick="showScreen('login')">← Wapas Login</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="screen-app" style="display:none">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-name" id="topbar-name">👤 </div>
+      <div class="topbar-cnic" id="topbar-cnic"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span id="notif-indicator" style="display:none;cursor:pointer" onclick="switchTab('reminders')">
+        🔔<span class="notif-badge" id="notif-count">0</span>
+      </span>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="main">
+    <!-- DASHBOARD TAB -->
+    <div id="tab-dashboard">
+      <div class="card-grid">
+        <div class="summary-card" style="border-left:4px solid #ef4444">
+          <div class="summary-label">Total Unpaid</div>
+          <div class="summary-value" style="color:#f87171" id="dash-unpaid">₨0</div>
+        </div>
+        <div class="summary-card" style="border-left:4px solid #22c55e">
+          <div class="summary-label">Total Paid</div>
+          <div class="summary-value" style="color:#4ade80" id="dash-paid">₨0</div>
+        </div>
+        <div class="summary-card" style="border-left:4px solid #f97316">
+          <div class="summary-label">Overdue</div>
+          <div class="summary-value" style="color:#fb923c" id="dash-overdue">0</div>
+        </div>
+        <div class="summary-card" style="border-left:4px solid #06b6d4">
+          <div class="summary-label">Due This Week</div>
+          <div class="summary-value" style="color:#22d3ee" id="dash-soon">0</div>
+        </div>
+      </div>
+      <div id="dash-alerts"></div>
+      <div class="section-title">Category Breakdown</div>
+      <div class="card" id="dash-categories"></div>
+    </div>
+
+    <!-- RECORDS TAB -->
+    <div id="tab-records" style="display:none">
+      <div class="filters" id="filter-bar"></div>
+      <div id="records-list"></div>
+    </div>
+
+    <!-- REMINDERS TAB -->
+    <div id="tab-reminders" style="display:none">
+      <div class="info-box">
+        <div class="info-title">📱 Reminders Kaise Kaam Karte Hain</div>
+        <div class="info-text" id="reminder-info-text">Kisi bhi record par 🔔 button dabayein reminder on karne ke liye. Yeh sab records yahan dikhenge.</div>
+      </div>
+      <div id="reminders-list"></div>
+    </div>
+
+    <!-- ADD TAB -->
+    <div id="tab-add" style="display:none">
+      <div class="card">
+        <div style="font-size:18px;font-weight:700;margin-bottom:18px">➕ Naya Record Add Karein</div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="add-category">
+            <option>Loan</option>
+            <option>Installment</option>
+            <option>Government Fee</option>
+            <option>Debt</option>
+            <option>Reminder</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Title / Description</label>
+          <input class="form-input" id="add-title" placeholder="e.g. HBL Loan, Property Tax..."/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount (PKR) — 0 agar amount nahi</label>
+          <input class="form-input" id="add-amount" type="number" placeholder="0"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due Date</label>
+          <input class="form-input" id="add-date" type="date"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Note (optional)</label>
+          <input class="form-input" id="add-note" placeholder="Extra info..."/>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">
+            <div class="toggle-title">🔔 Reminder Enable Karein</div>
+            <div class="toggle-sub">Due date se pehle notification milegi</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="add-reminder"/>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <button class="btn-primary" onclick="saveRecord()">Record Save Karein ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-dashboard" onclick="switchTab('dashboard')">
+      <span class="nav-icon">📊</span>Dashboard
+    </button>
+    <button class="nav-btn" id="nav-records" onclick="switchTab('records')">
+      <span class="nav-icon">📋</span>Records
+    </button>
+    <button class="nav-btn" id="nav-reminders" onclick="switchTab('reminders')">
+      <span class="nav-icon">🔔</span>Reminders
+    </button>
+    <button class="nav-btn" id="nav-add" onclick="switchTab('add')">
+      <span class="nav-icon">➕</span>Add
+    </button>
+  </nav>
+</div>
+
+<script>
+// ── DATA ────────────────────────────────────────────────────────
+const COLORS = {Loan:'#ef4444',Installment:'#f97316','Government Fee':'#8b5cf6',Debt:'#ec4899',Reminder:'#06b6d4',Other:'#6b7280'};
+const ICONS  = {Loan:'🏦',Installment:'📦','Government Fee':'🏛️',Debt:'💳',Reminder:'🔔',Other:'📁'};
+
+let currentUser = null;
+
+function getUsers(){ return JSON.parse(localStorage.getItem('ft_users')||'[]'); }
+function saveUsers(u){ localStorage.setItem('ft_users',JSON.stringify(u)); }
+function getRecords(){ return JSON.parse(localStorage.getItem('ft_records')||'[]'); }
+function saveRecords(r){ localStorage.setItem('ft_records',JSON.stringify(r)); }
+function getUserRecords(){ return getRecords().filter(r=>r.userId===currentUser.id); }
+function daysUntil(d){ return Math.ceil((new Date(d)-new Date())/(86400000)); }
+
+function seedDemo(userId){
+  const all = getRecords();
+  if(all.some(r=>r.userId===userId)) return;
+  const demos = [
+    {id:'d1',userId,category:'Loan',title:'Bank Loan',amount:50000,dueDate:futureDate(34),note:'HBL personal loan',isPaid:false,hasReminder:true},
+    {id:'d2',userId,category:'Government Fee',title:'Property Tax',amount:8500,dueDate:futureDate(5),note:'Annual property tax',isPaid:false,hasReminder:true},
+    {id:'d3',userId,category:'Installment',title:'Mobile Phone EMI',amount:3200,dueDate:pastDate(3),note:'Samsung S24',isPaid:false,hasReminder:false},
+    {id:'d4',userId,category:'Reminder',title:'NADRA Card Renewal',amount:0,dueDate:futureDate(50),note:'ID card renew karna hai',isPaid:false,hasReminder:true},
+  ];
+  saveRecords([...all,...demos]);
+}
+function futureDate(d){const dt=new Date();dt.setDate(dt.getDate()+d);return dt.toISOString().slice(0,10);}
+function pastDate(d){const dt=new Date();dt.setDate(dt.getDate()-d);return dt.toISOString().slice(0,10);}
+
+// ── AUTH ─────────────────────────────────────────────────────────
+function doLogin(){
+  const cnic = document.getElementById('login-cnic').value.trim();
+  const users = getUsers();
+  const user = users.find(u=>u.cnic===cnic);
+  if(!user){ showErr('login-error','CNIC nahi mila. Pehle register karein.'); return; }
+  currentUser = user;
+  localStorage.setItem('ft_loggedIn', JSON.stringify(user));
+  seedDemo(user.id);
+  startApp();
+}
+
+function doRegister(){
+  const name = document.getElementById('reg-name').value.trim();
+  const cnic = document.getElementById('reg-cnic').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  if(!name||!cnic){ showErr('reg-error','Naam aur CNIC zaroor bharein.'); return; }
+  const users = getUsers();
+  if(users.some(u=>u.cnic===cnic)){ showErr('reg-error','Yeh CNIC already registered hai.'); return; }
+  const user = {id:'u_'+Date.now(), name, cnic, phone};
+  users.push(user);
+  saveUsers(users);
+  currentUser = user;
+  localStorage.setItem('ft_loggedIn', JSON.stringify(user));
+  startApp();
+}
+
+function doLogout(){
+  localStorage.removeItem('ft_loggedIn');
+  currentUser = null;
+  showScreen('login');
+  document.getElementById('login-cnic').value='';
+}
+
+function showErr(id, msg){
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(()=>el.style.display='none', 4000);
+}
+
+// ── APP ──────────────────────────────────────────────────────────
+function startApp(){
+  document.getElementById('topbar-name').textContent = '👤 '+currentUser.name;
+  document.getElementById('topbar-cnic').textContent = currentUser.cnic;
+  document.getElementById('reminder-info-text').textContent =
+    'Kisi bhi record par 🔔 button dabayein reminder on karne ke liye. Phone: '+(currentUser.phone||'nahi diya');
+  // set today as default date
+  document.getElementById('add-date').value = new Date().toISOString().slice(0,10);
+  showScreen('app');
+  switchTab('dashboard');
+}
+
+function showScreen(name){
+  ['login','register','app'].forEach(s=>{
+    document.getElementById('screen-'+s).style.display = s===name ? (s==='app'?'block':'flex') : 'none';
+  });
+}
+
+function switchTab(tab){
+  ['dashboard','records','reminders','add'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display = t===tab?'block':'none';
+    const nb = document.getElementById('nav-'+t);
+    if(nb) nb.classList.toggle('active', t===tab);
+  });
+  if(tab==='dashboard') renderDashboard();
+  if(tab==='records') renderRecords();
+  if(tab==='reminders') renderReminders();
+}
+
+// ── DASHBOARD ───────────────────────────────────────────────────
+function renderDashboard(){
+  const recs = getUserRecords();
+  const unpaid = recs.filter(r=>!r.isPaid&&r.amount>0).reduce((s,r)=>s+r.amount,0);
+  const paid   = recs.filter(r=>r.isPaid&&r.amount>0).reduce((s,r)=>s+r.amount,0);
+  const overdue= recs.filter(r=>!r.isPaid&&daysUntil(r.dueDate)<0);
+  const soon   = recs.filter(r=>!r.isPaid&&daysUntil(r.dueDate)>=0&&daysUntil(r.dueDate)<=7);
+
+  document.getElementById('dash-unpaid').textContent = '₨'+unpaid.toLocaleString();
+  document.getElementById('dash-paid').textContent   = '₨'+paid.toLocaleString();
+  document.getElementById('dash-overdue').textContent = overdue.length+' items';
+  document.getElementById('dash-soon').textContent    = soon.length+' items';
+
+  // Notif
+  const total = overdue.length+soon.length;
+  document.getElementById('notif-indicator').style.display = total>0?'inline':'none';
+  document.getElementById('notif-count').textContent = total;
+
+  // Alerts
+  let alerts = '';
+  if(overdue.length){
+    alerts += `<div class="alert" style="background:#450a0a;border-color:#ef4444">
+      <div class="alert-title" style="color:#fca5a5">⚠️ Overdue Payments (${overdue.length})</div>
+      ${overdue.map(r=>`<div class="alert-item" style="color:#f87171">• ${r.title}${r.amount>0?' — ₨'+r.amount.toLocaleString():''} (${r.dueDate})</div>`).join('')}
+    </div>`;
+  }
+  if(soon.length){
+    alerts += `<div class="alert" style="background:#1c1a05;border-color:#ca8a04">
+      <div class="alert-title" style="color:#fde68a">🔔 Is Hafte Due (${soon.length})</div>
+      ${soon.map(r=>`<div class="alert-item" style="color:#fbbf24">• ${r.title}${r.amount>0?' — ₨'+r.amount.toLocaleString():''} (${daysUntil(r.dueDate)}d baqi)</div>`).join('')}
+    </div>`;
+  }
+  document.getElementById('dash-alerts').innerHTML = alerts;
+
+  // Categories
+  const cats = ['Loan','Installment','Government Fee','Debt','Reminder','Other'];
+  let catHtml = '';
+  cats.forEach(cat=>{
+    const cr = recs.filter(r=>r.category===cat);
+    if(!cr.length) return;
+    const total = cr.reduce((s,r)=>s+r.amount,0);
+    catHtml += `<div class="cat-row">
+      <span>${ICONS[cat]} ${cat}</span>
+      <span style="color:${COLORS[cat]};font-weight:700">₨${total.toLocaleString()} (${cr.length})</span>
+    </div>`;
+  });
+  document.getElementById('dash-categories').innerHTML = catHtml || '<div style="color:#475569;text-align:center;padding:10px">Koi record nahi</div>';
+}
+
+// ── RECORDS ─────────────────────────────────────────────────────
+let activeFilter = 'All';
+function renderRecords(){
+  const cats = ['All','Loan','Installment','Government Fee','Debt','Reminder','Other'];
+  document.getElementById('filter-bar').innerHTML = cats.map(f=>
+    `<button class="filter-btn" style="background:${f===activeFilter?'#3b82f6':'#1e293b'};color:${f===activeFilter?'#fff':'#94a3b8'}" onclick="setFilter('${f}')">${f}</button>`
+  ).join('');
+
+  const recs = getUserRecords().filter(r=> activeFilter==='All'||r.category===activeFilter);
+  if(!recs.length){
+    document.getElementById('records-list').innerHTML = '<div class="empty">Koi record nahi.<br>➕ Add tab se naya record banayein.</div>';
+    return;
+  }
+  document.getElementById('records-list').innerHTML = recs.map(r=>{
+    const days = daysUntil(r.dueDate);
+    const color = COLORS[r.category]||'#6b7280';
+    const chips = [
+      `<span class="chip" style="background:${color}22;color:${color}">${r.category}</span>`,
+      r.hasReminder?`<span class="chip" style="background:#06b6d422;color:#06b6d4">🔔 Reminder</span>`:'',
+      !r.isPaid&&days<0?`<span class="chip" style="background:#ef444422;color:#ef4444">OVERDUE</span>`:'',
+      !r.isPaid&&days>=0&&days<=7?`<span class="chip" style="background:#f9731622;color:#f97316">${days}d baqi</span>`:'',
+    ].join('');
+    return `<div class="record-card ${r.isPaid?'paid':''}" style="border-left-color:${color}" id="rec-${r.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1">
+          <div>${chips}</div>
+          <div class="record-title" style="${r.isPaid?'text-decoration:line-through':''}">${ICONS[r.category]} ${r.title}</div>
+          ${r.note?`<div class="record-note">${r.note}</div>`:''}
+          <div class="record-date">📅 ${r.dueDate}</div>
+        </div>
+        <div style="text-align:right;margin-left:10px">
+          ${r.amount>0?`<div class="record-amount" style="color:${r.isPaid?'#4ade80':'#f87171'}">₨${r.amount.toLocaleString()}</div>`:''}
+          <div class="record-status" style="color:${r.isPaid?'#4ade80':'#fbbf24'}">${r.isPaid?'✓ Paid':'Unpaid'}</div>
+        </div>
+      </div>
+      <div class="record-actions">
+        <button class="btn-paid" style="background:${r.isPaid?'#334155':'#052e16'};color:${r.isPaid?'#94a3b8':'#4ade80'};border-color:${r.isPaid?'#334155':'#166534'}" onclick="togglePaid('${r.id}')">${r.isPaid?'Unpaid Mark Karein':'✓ Paid Mark Karein'}</button>
+        <button class="btn-icon" style="background:${r.hasReminder?'#0e4a5a':'#1e293b'};color:${r.hasReminder?'#06b6d4':'#475569'}" onclick="toggleReminder('${r.id}')">🔔</button>
+        <button class="btn-icon" style="background:#450a0a;color:#f87171" onclick="deleteRecord('${r.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setFilter(f){ activeFilter=f; renderRecords(); }
+
+function togglePaid(id){
+  const recs = getRecords();
+  const r = recs.find(x=>x.id===id);
+  if(r){ r.isPaid=!r.isPaid; saveRecords(recs); renderRecords(); renderDashboard(); }
+}
+function toggleReminder(id){
+  const recs = getRecords();
+  const r = recs.find(x=>x.id===id);
+  if(r){ r.hasReminder=!r.hasReminder; saveRecords(recs); renderRecords(); renderReminders(); }
+}
+function deleteRecord(id){
+  if(!confirm('Yeh record delete karna chahte hain?')) return;
+  saveRecords(getRecords().filter(r=>r.id!==id));
+  renderRecords(); renderDashboard();
+  showToast('🗑 Record delete ho gaya');
+}
+
+// ── REMINDERS ───────────────────────────────────────────────────
+function renderReminders(){
+  const rems = getUserRecords().filter(r=>r.hasReminder&&!r.isPaid);
+  if(!rems.length){
+    document.getElementById('reminders-list').innerHTML = '<div class="empty">🔔 Koi reminder nahi.<br>Records tab mein 🔔 button dabayein.</div>';
+    return;
+  }
+  document.getElementById('reminders-list').innerHTML = rems.map(r=>{
+    const days = daysUntil(r.dueDate);
+    const dc = days<0?'#f87171':days<=7?'#fbbf24':'#4ade80';
+    const dt = days<0?Math.abs(days)+'d overdue':days===0?'Aaj!':days+'d baqi';
+    return `<div class="card" style="border-left:4px solid #06b6d4;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-weight:700;font-size:14px">${ICONS[r.category]} ${r.title}</div>
+        <div style="color:#64748b;font-size:12px;margin-top:4px">📅 ${r.dueDate}${r.amount>0?' · ₨'+r.amount.toLocaleString():''}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="color:${dc};font-weight:700;font-size:13px">${dt}</div>
+        <button style="background:#450a0a;color:#f87171;border:none;border-radius:6px;padding:4px 8px;font-size:11px;margin-top:4px;cursor:pointer" onclick="toggleReminder('${r.id}')">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ADD RECORD ──────────────────────────────────────────────────
+function saveRecord(){
+  const title = document.getElementById('add-title').value.trim();
+  const date  = document.getElementById('add-date').value;
+  if(!title){ showToast('❌ Title zaroor bharein!', true); return; }
+  if(!date) { showToast('❌ Date zaroor chunein!', true); return; }
+  const rec = {
+    id: 'r_'+Date.now(),
+    userId: currentUser.id,
+    category: document.getElementById('add-category').value,
+    title,
+    amount: parseFloat(document.getElementById('add-amount').value)||0,
+    dueDate: date,
+    note: document.getElementById('add-note').value.trim(),
+    isPaid: false,
+    hasReminder: document.getElementById('add-reminder').checked,
+  };
+  const all = getRecords();
+  all.push(rec);
+  saveRecords(all);
+  // reset
+  document.getElementById('add-title').value='';
+  document.getElementById('add-amount').value='';
+  document.getElementById('add-note').value='';
+  document.getElementById('add-reminder').checked=false;
+  showToast('✅ Record save ho gaya!');
+  switchTab('records');
+}
+
+// ── TOAST ────────────────────────────────────────────────────────
+function showToast(msg, isError=false){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError?'#ef4444':'#22c55e';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+(function init(){
+  // Seed demo user
+  const users = getUsers();
+  if(!users.some(u=>u.cnic==='35202-1234567-1')){
+    users.push({id:'demo_user_1', name:'Ali Hassan', cnic:'35202-1234567-1', phone:'0300-1234567'});
+    saveUsers(users);
+  }
+  // Auto login if session exists
+  const saved = localStorage.getItem('ft_loggedIn');
+  if(saved){
+    currentUser = JSON.parse(saved);
+    seedDemo(currentUser.id);
+    startApp();
+  } else {
+    showScreen('login');
+  }
+})();
+</script>
+</body>
+</html>
