@@ -131,7 +131,6 @@
     <div id="login-error" style="color:#f87171;font-size:12px;margin-bottom:10px;display:none"></div>
     <button class="btn-primary" onclick="doLogin()">Login →</button>
     <button class="btn-outline" onclick="showScreen('register')">Naye User? Register Karein</button>
-    <div style="color:#475569;font-size:11px;text-align:center;margin-top:14px">Demo CNIC: 35202-1234567-1</div>
   </div>
 </div>
 
@@ -263,12 +262,52 @@
   </div>
 
   <!-- Bottom Nav -->
+
+  <!-- BUDGET TAB -->
+  <div id="tab-budget" style="display:none;padding:16px 14px 80px;max-width:540px;margin:0 auto">
+    <div style="font-size:18px;font-weight:700;margin-bottom:4px;color:#f1f5f9">💰 Monthly Budget Planner</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:18px">Set your monthly income and track spending</div>
+
+    <!-- Income Setup -->
+    <div style="background:#1e293b;border-radius:14px;padding:18px;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:700;color:#4ade80;margin-bottom:12px">📥 Monthly Income</div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input id="budget-income" type="number" placeholder="Your monthly income ₨" 
+          style="flex:1;padding:10px 13px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:14px"/>
+        <button onclick="saveBudget()" style="padding:10px 16px;background:#22c55e;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:13px">Save</button>
+      </div>
+    </div>
+
+    <!-- Budget Summary -->
+    <div id="budget-summary" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px"></div>
+
+    <!-- Spending Categories -->
+    <div style="background:#1e293b;border-radius:14px;padding:18px;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:12px">📊 Budget by Category</div>
+      <div id="budget-categories"></div>
+    </div>
+
+    <!-- Budget Tips -->
+    <div style="background:#0e172a;border:1px solid #0e4a5a;border-radius:14px;padding:16px">
+      <div style="color:#22d3ee;font-weight:700;margin-bottom:8px">💡 Smart Budget Tips</div>
+      <div style="color:#94a3b8;font-size:13px;line-height:1.8">
+        ✅ <strong style="color:#f1f5f9">50/30/20 Rule:</strong> 50% needs, 30% wants, 20% savings<br/>
+        ✅ <strong style="color:#f1f5f9">Emergency Fund:</strong> Save 3 months expenses<br/>
+        ✅ <strong style="color:#f1f5f9">Pay loans first:</strong> High interest loans eat your money<br/>
+        ✅ <strong style="color:#f1f5f9">Track daily:</strong> Add every expense to see where money goes
+      </div>
+    </div>
+  </div>
+
   <nav class="bottom-nav">
     <button class="nav-btn active" id="nav-dashboard" onclick="switchTab('dashboard')">
       <span class="nav-icon">📊</span>Dashboard
     </button>
     <button class="nav-btn" id="nav-records" onclick="switchTab('records')">
       <span class="nav-icon">📋</span>Records
+    </button>
+    <button class="nav-btn" id="nav-budget" onclick="switchTab('budget')">
+      <span class="nav-icon">💰</span>Budget
     </button>
     <button class="nav-btn" id="nav-reminders" onclick="switchTab('reminders')">
       <span class="nav-icon">🔔</span>Reminders
@@ -294,15 +333,8 @@ function getUserRecords(){ return getRecords().filter(r=>r.userId===currentUser.
 function daysUntil(d){ return Math.ceil((new Date(d)-new Date())/(86400000)); }
 
 function seedDemo(userId){
-  const all = getRecords();
-  if(all.some(r=>r.userId===userId)) return;
-  const demos = [
-    {id:'d1',userId,category:'Loan',title:'Bank Loan',amount:50000,dueDate:futureDate(34),note:'HBL personal loan',isPaid:false,hasReminder:true},
-    {id:'d2',userId,category:'Government Fee',title:'Property Tax',amount:8500,dueDate:futureDate(5),note:'Annual property tax',isPaid:false,hasReminder:true},
-    {id:'d3',userId,category:'Installment',title:'Mobile Phone EMI',amount:3200,dueDate:pastDate(3),note:'Samsung S24',isPaid:false,hasReminder:false},
-    {id:'d4',userId,category:'Reminder',title:'NADRA Card Renewal',amount:0,dueDate:futureDate(50),note:'ID card renew karna hai',isPaid:false,hasReminder:true},
-  ];
-  saveRecords([...all,...demos]);
+  // REMOVED - no more auto demo data
+  // Users start with empty records
 }
 function futureDate(d){const dt=new Date();dt.setDate(dt.getDate()+d);return dt.toISOString().slice(0,10);}
 function pastDate(d){const dt=new Date();dt.setDate(dt.getDate()-d);return dt.toISOString().slice(0,10);}
@@ -315,7 +347,6 @@ function doLogin(){
   if(!user){ showErr('login-error','CNIC nahi mila. Pehle register karein.'); return; }
   currentUser = user;
   localStorage.setItem('ft_loggedIn', JSON.stringify(user));
-  seedDemo(user.id);
   startApp();
 }
 
@@ -367,7 +398,7 @@ function showScreen(name){
 }
 
 function switchTab(tab){
-  ['dashboard','records','reminders','add'].forEach(t=>{
+  ['dashboard','records','budget','reminders','add'].forEach(t=>{
     document.getElementById('tab-'+t).style.display = t===tab?'block':'none';
     const nb = document.getElementById('nav-'+t);
     if(nb) nb.classList.toggle('active', t===tab);
@@ -375,6 +406,7 @@ function switchTab(tab){
   if(tab==='dashboard') renderDashboard();
   if(tab==='records') renderRecords();
   if(tab==='reminders') renderReminders();
+  if(tab==='budget') renderBudget();
 }
 
 // ── DASHBOARD ───────────────────────────────────────────────────
@@ -553,17 +585,11 @@ function showToast(msg, isError=false){
 
 // ── INIT ─────────────────────────────────────────────────────────
 (function init(){
-  // Seed demo user
-  const users = getUsers();
-  if(!users.some(u=>u.cnic==='35202-1234567-1')){
-    users.push({id:'demo_user_1', name:'Ali Hassan', cnic:'35202-1234567-1', phone:'0300-1234567'});
-    saveUsers(users);
-  }
+  // No demo users - clean start
   // Auto login if session exists
   const saved = localStorage.getItem('ft_loggedIn');
   if(saved){
     currentUser = JSON.parse(saved);
-    seedDemo(currentUser.id);
     startApp();
   } else {
     showScreen('login');
